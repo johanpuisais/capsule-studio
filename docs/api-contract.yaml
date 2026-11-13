@@ -1,0 +1,104 @@
+openapi: 3.0.3
+info:
+  title: Capsule Studio API
+  version: 0.1.0
+  description: >
+    Routes de Capsule Studio (pas des endpoints Fish Audio). Serveur local http://127.0.0.1:8746.
+    Propriétaire : cookie de session + en-tête X-Capsule-CSRF: 1 sur les mutations.
+    Agent : Authorization: Bearer <jeton agent>, routes marquées x-agent: true uniquement ; en plus, routes marquées x-autonomous: true quand le propriétaire a activé le mode autonome (modèle gratuit seulement, plafond quotidien propre à l'agent).
+    Erreurs : { "error": { "code": string, "message": string } }.
+servers:
+  - url: http://127.0.0.1:8746
+components:
+  securitySchemes:
+    ownerSession: { type: apiKey, in: cookie, name: cs_session }
+    agentToken: { type: http, scheme: bearer }
+security:
+  - ownerSession: []
+paths:
+  /api/v1/session:
+    get: { summary: État de session (public), security: [], responses: { '200': { description: "{ ownerExists, authenticated }" } } }
+  /api/v1/session/setup:
+    post: { summary: Création du mot de passe propriétaire (premier lancement, public), security: [], responses: { '200': { description: Session ouverte }, '409': { description: Déjà configuré } } }
+  /api/v1/session/login:
+    post: { summary: Connexion du propriétaire (public, 5 essais/min), security: [], responses: { '200': { description: Session ouverte }, '401': { description: Mot de passe incorrect }, '429': { description: Trop de tentatives } } }
+  /api/v1/session/logout:
+    post: { summary: Déconnexion, responses: { '200': { description: OK } } }
+  /api/v1/capabilities:
+    get: { summary: Modèles autorisés, limites, offre gratuite (aucune clé), x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: Capacités } } }
+  /api/v1/settings:
+    get: { summary: Réglages (statut de clé, jeton agent, limites), responses: { '200': { description: Réglages } } }
+    post: { summary: "Modifie les réglages { fishApiKey (vérifiée auprès de Fish Audio, jamais renvoyée), allowPaid, paidBudgetTotalUsd, paidMaxPerRequestUsd, enableDrama3, maxGenerationsPerDay, freeOfferEndDate, lan } ; null = valeur du .env ou par défaut", responses: { '200': { description: "{ settings, warning }" }, '400': { description: Valeur invalide ou clé refusée } } }
+  /api/v1/settings/agent-token:
+    post: { summary: Génère un jeton agent (affiché une seule fois, l'ancien est révoqué), responses: { '200': { description: "{ token, warning }" } } }
+  /api/v1/settings/agent-token/revoke:
+    post: { summary: Révoque le jeton agent, responses: { '200': { description: OK } } }
+  /api/v1/settings/agent-autonomy:
+    post: { summary: "Mode autonome de l'agent { enabled: booléen, dailyLimit?: 1..maxGenerationsPerDay }", responses: { '200': { description: "{ enabled, dailyLimit, generationsToday }" } } }
+  /api/v1/projects:
+    get: { summary: Projets non archivés, x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: "{ items }" } } }
+    post: { x-autonomous: true, summary: Crée un projet, responses: { '200': { description: Projet } } }
+  /api/v1/projects/{id}:
+    get: { summary: Projet, segments, révision courante et prises, x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: Projet }, '404': { description: Introuvable } } }
+  /api/v1/projects/{id}/montage:
+    post: { x-autonomous: true, summary: "Réglages du montage { gap, mix: { A, B }, nudges: { segmentId: secondes }, maxPause, edits: { segmentId: { in, out, cuts } }, music }, bornes vérifiées", responses: { '200': { description: Projet }, '400': { description: Valeur hors bornes } } }
+  /api/v1/projects/{id}/music:
+    get: { summary: Fichier de la musique de fond du projet, responses: { '200': { description: Audio }, '404': { description: Aucune musique } } }
+    post: { summary: "Musique de fond (fichier WAV, MP3, OGG, FLAC ou M4A brut dans le corps, nom dans X-Filename), remplace la précédente", responses: { '200': { description: Projet }, '400': { description: Format non reconnu }, '413': { description: Fichier trop volumineux (100 Mo max) } } }
+  /api/v1/projects/{id}/music/remove:
+    post: { summary: Retire la musique de fond du projet, responses: { '200': { description: Projet } } }
+  /api/v1/projects/{id}/cast:
+    post: { x-autonomous: true, summary: "Mode et voix du projet { mode: mono|dialogue, voices: { A, B }, names: { A, B } }", responses: { '200': { description: Projet } } }
+  /api/v1/projects/{id}/archive:
+    post: { summary: Archive un projet (pas de suppression), responses: { '200': { description: OK } } }
+  /api/v1/projects/{id}/segments:
+    post: { x-autonomous: true, summary: "Crée un segment { title, spokenText, instruction, speaker: A|B }", responses: { '200': { description: Segment } } }
+  /api/v1/segments/{id}/revisions:
+    post: { x-autonomous: true, summary: "Nouvelle révision { baseRevisionId, title, spokenText, instruction }", responses: { '200': { description: Segment }, '409': { description: revision_conflict } } }
+  /api/v1/segments/{id}/choose:
+    post: { x-autonomous: true, summary: "Choisit la prise retenue { takeId }", responses: { '200': { description: Segment } } }
+  /api/v1/segments/{id}/speaker:
+    post: { x-autonomous: true, summary: "Intervenant du segment { speaker: A|B }", responses: { '200': { description: Projet } } }
+  /api/v1/segments/{id}/move:
+    post: { x-autonomous: true, summary: "Déplace un segment { direction: up|down }", responses: { '200': { description: Projet } } }
+  /api/v1/segments/{id}/archive:
+    post: { summary: Archive un segment, responses: { '200': { description: Projet } } }
+  /api/v1/voices:
+    get: { summary: Voix (référence fournisseur masquée pour l'agent), x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: "{ items }" } } }
+  /api/v1/voices/catalog:
+    get: { summary: "Catalogue public Fish Audio (voix françaises, sous licence par défaut ; ?tags=male,calm étiquettes cumulées parmi une liste fermée, ?all=1 voix communautaires, ?page=) ; propriétaire uniquement", responses: { '200': { description: "{ total, hasMore, items: [{ id, title, author, licensed, uses, tags, sampleUrl, localVoiceId }] }" } } }
+  /api/v1/voices/account:
+    get: { summary: "Voix du compte Fish Audio (GET /model?self=true), jamais le catalogue public ; propriétaire uniquement", responses: { '200': { description: "{ total, items: [{ id, title, type, state, visibility, usable, localVoiceId }] }" } } }
+  /api/v1/voices/import:
+    post: { summary: "Ajoute une voix existante { name, referenceId, rightsConfirmed: true }, vérifiée par GET /model/{id}", responses: { '200': { description: Voix } } }
+  /api/v1/voices/{id}/verify:
+    post: { summary: Revérifie l'état et la visibilité chez Fish Audio, responses: { '200': { description: Voix } } }
+  /api/v1/voices/{id}/archive:
+    post: { summary: Archive une voix, responses: { '200': { description: OK } } }
+  /api/v1/voices/clone:
+    post: { summary: "Clonage privé (multipart : title, file, transcript, consent=true, enhanceAudio)", responses: { '200': { description: Voix }, '400': { description: consent_required / invalid_file } } }
+  /api/v1/proposals:
+    get: { summary: "Propositions (filtre ?state=proposed)", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: "{ items }" } } }
+    post: { summary: "Proposition de l'agent { projectId, segmentId?, baseRevisionId?, title?, spokenText, deliveryInstruction?, requestedModelKey?, voiceId?, speaker?: A|B, note? } — aucun appel Fish Audio", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '201': { description: Proposition }, '409': { description: revision_conflict } } }
+  /api/v1/proposals/{id}:
+    get: { summary: Proposition, état et générations liées, x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: Proposition } } }
+  /api/v1/proposals/{id}/decision:
+    post: { summary: "Décision du propriétaire { decision: accept|reject }", responses: { '200': { description: Proposition }, '409': { description: obsolete } } }
+  /api/v1/generation-plans:
+    post: { summary: "Plan { segmentId, revisionId?, instruction?, voiceId, modelKey, proposalId? } : validation et estimation, aucun appel génératif", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '201': { description: Plan pending_approval }, '403': { description: model_blocked } } }
+  /api/v1/generation-plans/{id}:
+    get: { summary: Plan, x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: Plan } } }
+  /api/v1/generation-plans/{id}/approve:
+    post: { x-autonomous: true, summary: Approbation (propriétaire uniquement, quota et budget réservés, expire en 30 min), responses: { '200': { description: Plan approved }, '409': { description: stale_plan }, '429': { description: daily_quota } } }
+  /api/v1/generations:
+    post: { summary: "Exécute un plan approuvé { planId }, en-tête Idempotency-Key obligatoire", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '202': { description: Génération créée }, '200': { description: Même clé, même plan }, '403': { description: not_approved }, '409': { description: approval_consumed / idempotency_conflict / stale_plan } } }
+  /api/v1/generations/{id}:
+    get: { summary: "Statut (queued|running|succeeded|failed|uncertain), requête expurgée, mesures, audioUrl si terminé", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: Génération } } }
+  /api/v1/takes/{id}/audio:
+    get: { summary: "Audio MP3 (accès contrôlé, Range accepté, ?download=1)", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: audio/mpeg }, '206': { description: Plage } } }
+  /api/v1/exports:
+    post: { summary: "ZIP des prises { takeIds } + manifeste.json", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: application/zip } } }
+  /api/v1/exports/wav:
+    post: { summary: "Capsule assemblée en un seul WAV { takeIds, gapMs (0-5000) }, prises WAV PCM identiques exigées", x-agent: true, security: [{ ownerSession: [] }, { agentToken: [] }], responses: { '200': { description: audio/wav }, '400': { description: Prise non WAV ou format différent } } }
+  /api/v1/demo:
+    post: { summary: Crée le projet de démonstration (textes fictifs), responses: { '200': { description: Projet } } }

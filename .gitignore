@@ -1,0 +1,17 @@
+# Secrets : jamais versionnés
+.env
+.env.*
+!.env.example
+
+# Données locales : base, prises audio, sessions
+data/
+*.mp3
+*.wav
+
+# Divers
+node_modules/
+*.log
+
+# Construction des versions (ZIP portable, Node téléchargé)
+dist/
+runtime/

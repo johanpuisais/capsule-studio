@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Capsule Studio</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#view">Aller au contenu</a>
+  <header class="topbar">
+    <a class="brand" href="#/studio">
+      <span class="logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
+      </span>
+      <span class="brand-name">Capsule Studio</span>
+      <span class="dev-badge" id="instance-label" hidden></span>
+    </a>
+    <div class="project-picker">
+      <label for="project-select" class="project-label">Projet</label>
+      <select id="project-select"></select>
+      <button type="button" class="btn ghost small" id="new-project-btn" title="Nouveau projet">+ Projet</button>
+    </div>
+    <nav class="mainnav" aria-label="Navigation principale">
+      <a href="#/studio" data-nav="studio">Studio</a>
+      <a href="#/montage" data-nav="montage">Montage</a>
+      <a href="#/voix" data-nav="voix">Voix</a>
+      <a href="#/propositions" data-nav="propositions">Propositions<span class="badge" id="proposal-badge" hidden></span></a>
+      <a href="#/reglages" data-nav="reglages">Réglages</a>
+    </nav>
+    <div class="topbar-status">
+      <span class="pill" id="key-status" role="status"></span>
+      <button type="button" class="btn ghost small" id="filming-btn" aria-pressed="false">Mode tournage</button>
+      <button type="button" class="btn ghost small icon-btn" id="theme-btn" aria-label="Basculer le thème clair/sombre">☀</button>
+      <button type="button" class="btn ghost small icon-btn" id="logout-btn" title="Déconnexion" aria-label="Déconnexion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button>
+    </div>
+  </header>
+  <main id="view" tabindex="-1"></main>
+  <!-- Informations sur l'offre : discrètes, en pied de page -->
+  <footer class="offer-banner" id="offer-banner" role="note"></footer>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <audio id="playlist-audio" hidden></audio>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

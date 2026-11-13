@@ -1,0 +1,3 @@
+# Fins de ligne imposées : scripts Unix en LF, scripts Windows en CRLF
+*.sh text eol=lf
+*.bat text eol=crlf

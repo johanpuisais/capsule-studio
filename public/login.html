@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Capsule Studio · Connexion</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <h1>Capsule Studio</h1>
+    <p class="muted" id="login-intro">Connexion du propriétaire.</p>
+    <form id="login-form" novalidate>
+      <label for="password">Mot de passe</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required minlength="10">
+      <div id="confirm-wrap" hidden>
+        <label for="password2">Confirmer le mot de passe</label>
+        <input id="password2" type="password" autocomplete="new-password" minlength="10">
+      </div>
+      <p class="form-error" id="login-error" role="alert"></p>
+      <button type="submit" class="btn primary" id="login-submit">Se connecter</button>
+    </form>
+  </main>
+  <script type="module" src="/login.js"></script>
+</body>
+</html>

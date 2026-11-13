@@ -6,6 +6,8 @@ Vous écrivez le texte, vous choisissez le ton avec des balises (`[calm]`, `[exc
 
 > Application indépendante, non affiliée à Fish Audio. Vous utilisez **votre propre clé API** : les générations sont faites et facturées sur votre compte Fish Audio.
 
+![Page Montage : deux voix, égaliseur, compresseur et musique de fond](docs/captures/montage.png)
+
 ## Fonctions
 
 - **Studio** : segments de texte, balises d'émotion en français, plusieurs prises par segment, comparaison, choix de la meilleure.
@@ -15,6 +17,8 @@ Vous écrivez le texte, vous choisissez le ton avec des balises (`[calm]`, `[exc
 - **Exports** : un seul WAV, ZIP des prises nommées par réplique, répliques traitées séparées (pour HeyGen ou un logiciel vidéo).
 - **Agent IA** (facultatif) : un agent externe (Claude, ChatGPT, Hermes, un script…) peut proposer des textes, ou travailler seul en mode autonome, avec un jeton séparé et des droits limités.
 - **Garde-fous** : modèle gratuit par défaut, générations payantes désactivées tant que vous n'avez pas fixé de budget, limite quotidienne.
+
+![Studio en mode dialogue : répliques A et B, balises d’émotion, génération et exports](docs/captures/studio.png)
 
 ## Installation (Windows)
 

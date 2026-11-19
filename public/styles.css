@@ -81,6 +81,24 @@
   }
 }
 
+/* Couleurs des familles de balises (palette du Studio) : clair */
+:root, :root[data-theme="light"] {
+  --fam-joie: #b7791f; --fam-calme: #3c8a68; --fam-surprise: #7b5cc4; --fam-tristesse: #3d6f9e;
+  --fam-peur: #a0527a; --fam-colere: #c0392b; --fam-ton: #7e6555; --fam-sons: #2f7f86; --fam-pause: #9b8a7c;
+}
+/* Couleurs des familles de balises : sombre (choix explicite) */
+:root[data-theme="dark"] {
+  --fam-joie: #e8b45a; --fam-calme: #7cc4a3; --fam-surprise: #b39af0; --fam-tristesse: #86b3e0;
+  --fam-peur: #e09ac0; --fam-colere: #f08a7a; --fam-ton: #b89d88; --fam-sons: #72c6cc; --fam-pause: #8a7868;
+}
+/* Couleurs des familles de balises : sombre (préférence système) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fam-joie: #e8b45a; --fam-calme: #7cc4a3; --fam-surprise: #b39af0; --fam-tristesse: #86b3e0;
+    --fam-peur: #e09ac0; --fam-colere: #f08a7a; --fam-ton: #b89d88; --fam-sons: #72c6cc; --fam-pause: #8a7868;
+  }
+}
+
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body {
@@ -265,10 +283,28 @@ table.simple th { font-size: .76rem; text-transform: uppercase; letter-spacing: 
 .tag-btn { font: inherit; font-size: .88rem; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
 .tag-btn:hover { border-color: var(--accent); }
 .tag-btn code { font-size: .74rem; color: var(--muted); }
-/* Zone repliée « Plus de balises » de la palette */
-.tag-more { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 8px; }
-.tag-more summary { cursor: pointer; font-weight: 700; color: var(--muted); font-size: .9rem; }
-.tag-more summary:hover { color: var(--accent); }
+/* Bouton « Insérer une balise… » : passe à la ligne sur mobile au lieu de déborder */
+.btn.tag-toggle { white-space: normal; text-align: left; max-width: 100%; }
+/* Palette : recherche, familles en couleur, bouton « +N » par famille */
+.tag-search { width: 100%; margin-top: 8px; font: inherit; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.tag-search:focus { outline: none; box-shadow: var(--focus); border-color: var(--accent); }
+.tag-group[data-fam="joie"] { --fam: var(--fam-joie); }
+.tag-group[data-fam="calme"] { --fam: var(--fam-calme); }
+.tag-group[data-fam="surprise"] { --fam: var(--fam-surprise); }
+.tag-group[data-fam="tristesse"] { --fam: var(--fam-tristesse); }
+.tag-group[data-fam="peur"] { --fam: var(--fam-peur); }
+.tag-group[data-fam="colere"] { --fam: var(--fam-colere); }
+.tag-group[data-fam="ton"] { --fam: var(--fam-ton); }
+.tag-group[data-fam="sons"] { --fam: var(--fam-sons); }
+.tag-group[data-fam="pause"] { --fam: var(--fam-pause); }
+.tag-group small { display: flex; align-items: center; gap: 7px; }
+.fam-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--fam, var(--muted)); flex: none; }
+.tag-group .tag-btn { border-left: 4px solid var(--fam, var(--line)); }
+.tag-group .tag-btn.free { border-style: dashed; border-left-style: solid; }
+.tag-btn[hidden], .tag-group[hidden], .tag-more-btn[hidden] { display: none; }
+.tag-more-btn { font: inherit; font-size: .85rem; font-weight: 700; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--fam, var(--accent)); background: transparent; color: var(--fam, var(--accent)); cursor: pointer; }
+.tag-more-btn:hover { background: var(--surface-2); }
+.tag-more-btn:focus-visible, .tag-btn:focus-visible { outline: none; box-shadow: var(--focus); }
 .bracket-input { display: flex; align-items: center; gap: 6px; }
 .bracket-input span { font-family: var(--serif); font-size: 1.2rem; color: var(--accent); font-weight: 700; }
 .bracket-input input { flex: 1; }

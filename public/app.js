@@ -1,7 +1,7 @@
 // Capsule Studio : interface web. Aucun secret ici, aucun appel direct à Fish Audio.
 import { INTENTS, buildFinalText, utf8Bytes, buildTtsBody, redactedRequest, estimateUsd, FISH_TTS_URL, cleanAudioOptions, audioOptionsLabel, VOLUME_STEPS, FORMATS, SAMPLE_RATES, normalizeInstruction, VOICE_TAG_GROUPS, VOICE_TAGS } from '/shared/payload.js';
 import { createMontage } from '/montage.js';
-import { TAG_GROUPS, ALL_TAGS } from '/tags.js';
+import { TAG_GROUPS, ALL_TAGS, searchKey } from '/tags.js';
 
 // ---------- Utilitaires DOM (textContent uniquement : aucun HTML injecté) ----------
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -75,7 +75,8 @@ const S = {
   apiOpen: store.get('cs.apiPanel', window.innerWidth >= 1500 ? '1' : '0') === '1',
   showCompare: false,
   customOpen: false,
-  moreTagsOpen: false,
+  tagQuery: '',          // recherche dans la palette de balises
+  openTagFams: [],       // familles de balises dont les « +N » sont dépliés
   abPlaying: null,
   // Réglages audio Fish Audio (normalisation, volume) mémorisés entre les sessions
   audio: (() => { try { return cleanAudioOptions(JSON.parse(store.get('cs.audio', 'null'))) ?? cleanAudioOptions(); } catch { return cleanAudioOptions(); } })(),
@@ -820,21 +821,68 @@ function renderEditor() {
     onInput();
     saveDraft().then(() => renderTabs()).catch((e) => toast(e.message, 'error'));
   };
-  // Groupes de boutons de balises : `key` = 'tags' (visibles) ou 'more' (zone repliée)
-  const tagGroupsView = (key) => TAG_GROUPS.filter((g) => g[key].length).map((g) => h('div', { class: 'tag-group' },
-    h('small', {}, g.label),
-    h('div', { class: 'tag-list' }, g[key].map(([fr, tag]) => h('button', {
-      type: 'button', class: 'tag-btn', title: g.free ? `${tag} · description libre, rendu non garanti par Fish Audio` : tag,
-      // Empêche le champ texte de perdre le curseur au clic
-      onmousedown: (e) => e.preventDefault(), onclick: () => insertTag(tag)
-    }, fr, h('code', {}, tag))))));
+  // ----- Palette de balises : familles en couleur, « +N » par famille, recherche -----
+  // Tous les boutons sont créés une fois ; la recherche et les « +N » ne font que masquer/afficher (pas de re-rendu,
+  // le champ de recherche garde donc le focus). États gardés dans S entre deux affichages de l'éditeur.
+  const tagBtn = (g, fr, tag, extra) => h('button', {
+    type: 'button', class: `tag-btn${g.free ? ' free' : ''}`, dataset: { key: searchKey(`${fr} ${tag} ${g.label}`), extra: extra ? '1' : '' },
+    title: g.free ? `${tag} · description libre, rendu non garanti par Fish Audio` : tag,
+    // Empêche le champ texte de perdre le curseur au clic
+    onmousedown: (e) => e.preventDefault(), onclick: () => insertTag(tag)
+  }, fr, h('code', {}, tag));
+  const groupEls = TAG_GROUPS.map((g) => {
+    const moreBtn = g.more.length ? h('button', {
+      type: 'button', class: 'tag-more-btn', 'aria-expanded': 'false',
+      onmousedown: (e) => e.preventDefault(),
+      onclick: () => {
+        const open = new Set(S.openTagFams);
+        if (open.has(g.label)) open.delete(g.label); else open.add(g.label);
+        S.openTagFams = [...open];
+        applyTagFilter();
+      }
+    }) : null;
+    const el = h('div', { class: 'tag-group', dataset: { fam: g.fam } },
+      h('small', {}, h('span', { class: 'fam-dot', 'aria-hidden': 'true' }), g.label),
+      h('div', { class: 'tag-list' }, g.tags.map(([fr, tag]) => tagBtn(g, fr, tag, false)), g.more.map(([fr, tag]) => tagBtn(g, fr, tag, true)), moreBtn));
+    return { g, el, moreBtn };
+  });
+  const noTag = h('p', { class: 'small muted', hidden: true }, 'Aucune balise ne correspond. Essayez en anglais ou en français : « rire », « laugh », « ravi »…');
+  // Affiche les boutons selon la recherche (toutes les balises, repliées comprises) ou selon les « +N » ouverts
+  const applyTagFilter = () => {
+    const q = searchKey(S.tagQuery.trim());
+    let found = 0;
+    for (const { g, el, moreBtn } of groupEls) {
+      const open = S.openTagFams.includes(g.label);
+      let shown = 0;
+      for (const b of el.querySelectorAll('.tag-btn')) {
+        b.hidden = q ? !b.dataset.key.includes(q) : (b.dataset.extra === '1' && !open);
+        if (!b.hidden) shown++;
+      }
+      el.hidden = q && !shown;
+      found += shown;
+      if (moreBtn) {
+        moreBtn.hidden = Boolean(q);
+        moreBtn.textContent = open ? '− Moins' : `+${g.more.length}`;
+        moreBtn.title = open ? 'Masquer les balises moins courantes' : `Afficher ${g.more.length} autres balises « ${g.label} »`;
+        moreBtn.setAttribute('aria-expanded', String(open));
+      }
+    }
+    noTag.hidden = !q || found > 0;
+  };
+  const tagSearch = h('input', {
+    type: 'search', class: 'tag-search', value: S.tagQuery, placeholder: 'Rechercher une balise : ravi, rire, whisper…',
+    'aria-label': 'Rechercher une balise',
+    oninput: (e) => { S.tagQuery = e.currentTarget.value; applyTagFilter(); },
+    onkeydown: (e) => {
+      // Entrée : insère la première balise trouvée ; Échap : vide la recherche
+      if (e.key === 'Enter') { e.preventDefault(); [...palette.querySelectorAll('.tag-btn')].find((b) => !b.hidden && !b.closest('[hidden]'))?.click(); }
+      if (e.key === 'Escape' && S.tagQuery) { e.preventDefault(); e.currentTarget.value = S.tagQuery = ''; applyTagFilter(); }
+    }
+  });
   const palette = h('div', { class: 'compare-panel tag-palette' },
-    h('p', { class: 'small muted' }, 'Placez le curseur dans le texte puis cliquez sur une balise : elle s’insère à cet endroit et agit sur ce qui suit. Les balises restent en anglais, c’est la langue documentée par Fish Audio. Groupe « Libres » : descriptions acceptées mais non documentées, à valider à l’écoute.'),
-    tagGroupsView('tags'),
-    // Balises documentées moins courantes : repliées pour ne pas surcharger, état gardé entre deux affichages
-    h('details', { class: 'tag-more', open: S.moreTagsOpen, ontoggle: (e) => { S.moreTagsOpen = e.currentTarget.open; } },
-      h('summary', {}, `Plus de balises (${TAG_GROUPS.reduce((n, g) => n + g.more.length, 0)})`),
-      tagGroupsView('more')));
+    h('p', { class: 'small muted' }, 'Placez le curseur dans le texte puis cliquez sur une balise : elle s’insère à cet endroit et agit sur ce qui suit. Les balises restent en anglais, c’est la langue documentée par Fish Audio. « +N » affiche les balises moins courantes d’une famille ; la recherche les trouve toutes. Groupe « Libres » : descriptions acceptées mais non documentées, à valider à l’écoute.'),
+    tagSearch, noTag, groupEls.map((x) => x.el));
+  applyTagFilter();
 
   const intents = h('div', { class: 'intents', role: 'group', 'aria-label': 'Intention' },
     INTENTS.map((it) => h('button', {
@@ -868,7 +916,7 @@ function renderEditor() {
       h('span', {}, '✎ Cliquez sur le texte pour le modifier · enregistré automatiquement'),
       h('span', { id: 'text-count' })),
     h('div', { class: 'compare-link' },
-      h('button', { type: 'button', class: 'btn small ghost', 'aria-expanded': String(S.showTags), onclick: () => { S.showTags = !S.showTags; renderEditor(); } },
+      h('button', { type: 'button', class: 'btn small ghost tag-toggle', 'aria-expanded': String(S.showTags), onclick: () => { S.showTags = !S.showTags; renderEditor(); } },
         S.showTags ? '▾ Insérer une balise dans le texte (rire, pause, émotion…)' : '▸ Insérer une balise dans le texte (rire, pause, émotion…)')),
     S.showTags ? palette : null,
     seg.revision.author === 'agent' ? h('p', { class: 'muted small mt-8' }, 'Texte écrit par l’agent.') : null,

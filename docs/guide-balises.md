@@ -75,7 +75,7 @@ ALEX: [laughing] Bon. [long-break] [calm] Non. Pas sans relire.
 
 ## 4. Liste complète des balises
 
-Cette liste est **exactement** celle de la palette du Studio de Capsule Studio (fichier `public/tags.js`) : mêmes balises, mêmes libellés français. Les balises les plus courantes sont visibles directement, les autres dans la zone « Plus de balises ». Toute balise de cette liste peut donc être vue, comprise et retouchée par le propriétaire dans l'interface.
+Cette liste est **exactement** celle de la palette du Studio de Capsule Studio (fichier `public/tags.js`) : mêmes balises, mêmes libellés français. Dans la palette, les émotions sont rangées par familles de couleur (joie, calme, surprise, tristesse, peur, colère) ; les balises les plus courantes sont visibles directement, les autres derrière le bouton « +N » de leur famille, et la recherche les trouve toutes. Toute balise de cette liste peut donc être vue, comprise et retouchée par le propriétaire dans l'interface.
 
 ### Émotions de base (documentées)
 

@@ -75,6 +75,8 @@ ALEX: [laughing] Bon. [long-break] [calm] Non. Pas sans relire.
 
 ## 4. Liste complète des balises
 
+Cette liste est **exactement** celle de la palette du Studio de Capsule Studio (fichier `public/tags.js`) : mêmes balises, mêmes libellés français. Les balises les plus courantes sont visibles directement, les autres dans la zone « Plus de balises ». Toute balise de cette liste peut donc être vue, comprise et retouchée par le propriétaire dans l'interface.
+
 ### Émotions de base (documentées)
 
 | Français | Balise |
@@ -86,13 +88,13 @@ ALEX: [laughing] Bon. [long-break] [calm] Non. Pas sans relire.
 | Calme | `[calm]` |
 | Nerveux | `[nervous]` |
 | Confiant | `[confident]` |
-| Surpris, choqué | `[surprised]` |
+| Surpris | `[surprised]` |
 | Satisfait | `[satisfied]` |
 | Ravi | `[delighted]` |
 | Effrayé | `[scared]` |
 | Inquiet | `[worried]` |
-| Contrarié, vexé | `[upset]` |
-| Agacé, frustré | `[frustrated]` |
+| Contrarié | `[upset]` |
+| Agacé | `[frustrated]` |
 | Déprimé | `[depressed]` |
 | Empathique | `[empathetic]` |
 | Gêné | `[embarrassed]` |
@@ -102,7 +104,7 @@ ALEX: [laughing] Bon. [long-break] [calm] Non. Pas sans relire.
 | Détendu | `[relaxed]` |
 | Reconnaissant | `[grateful]` |
 | Curieux | `[curious]` |
-| Sarcastique, ironique | `[sarcastic]` |
+| Sarcastique | `[sarcastic]` |
 
 ### Émotions avancées (documentées)
 
@@ -123,7 +125,7 @@ ALEX: [laughing] Bon. [long-break] [calm] Non. Pas sans relire.
 | Honteux | `[ashamed]` |
 | Jaloux | `[jealous]` |
 | Envieux | `[envious]` |
-| Plein d'espoir | `[hopeful]` |
+| Plein d’espoir | `[hopeful]` |
 | Optimiste | `[optimistic]` |
 | Pessimiste | `[pessimistic]` |
 | Nostalgique | `[nostalgic]` |
@@ -173,12 +175,12 @@ ALEX: [laughing] Bon. [long-break] [calm] Non. Pas sans relire.
 
 | Français | Balise |
 |---|---|
-| Pause courte | `[break]` |
-| Pause longue | `[long-break]` |
+| Pause | `[break]` |
+| Longue pause | `[long-break]` |
 
 ### Descriptions libres (non documentées, rendu non garanti)
 
-S2 accepte des descriptions en anglais libre entre crochets. Celles-ci sont proposées dans la palette de Capsule Studio, à **valider à l'écoute** :
+S2 accepte des descriptions en anglais libre entre crochets. Celles-ci sont proposées dans la palette de Capsule Studio (groupe « Libres »), à **valider à l'écoute** :
 
 | Français | Balise | Repli documenté si le rendu est faible |
 |---|---|---|
@@ -187,7 +189,7 @@ S2 accepte des descriptions en anglais libre entre crochets. Celles-ci sont prop
 | Choqué | `[shocked]` | `[surprised]` |
 | Moqueur | `[mocking]` | `[sarcastic]` |
 
-D'autres descriptions courtes sont possibles (`[friendly]`, `[mysterious]`, `[urgent]`, `[serious]`…). Règle : **deux ou trois mots anglais au maximum**, et le signaler au propriétaire dans une ligne de titre `#` pour qu'il vérifie le rendu.
+D'autres descriptions courtes sont possibles (`[friendly]`, `[mysterious]`, `[urgent]`, `[serious]`…), mais elles **n'apparaissent pas dans la palette** : le propriétaire les verra en anglais. Les éviter sauf besoin réel. Règle : **deux ou trois mots anglais au maximum**, et le signaler au propriétaire dans une ligne de titre `#` pour qu'il vérifie le rendu.
 
 ---
 

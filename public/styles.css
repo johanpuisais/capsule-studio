@@ -265,6 +265,10 @@ table.simple th { font-size: .76rem; text-transform: uppercase; letter-spacing: 
 .tag-btn { font: inherit; font-size: .88rem; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
 .tag-btn:hover { border-color: var(--accent); }
 .tag-btn code { font-size: .74rem; color: var(--muted); }
+/* Zone repliée « Plus de balises » de la palette */
+.tag-more { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.tag-more summary { cursor: pointer; font-weight: 700; color: var(--muted); font-size: .9rem; }
+.tag-more summary:hover { color: var(--accent); }
 .bracket-input { display: flex; align-items: center; gap: 6px; }
 .bracket-input span { font-family: var(--serif); font-size: 1.2rem; color: var(--accent); font-weight: 700; }
 .bracket-input input { flex: 1; }

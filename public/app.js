@@ -1,6 +1,7 @@
 // Capsule Studio : interface web. Aucun secret ici, aucun appel direct à Fish Audio.
 import { INTENTS, buildFinalText, utf8Bytes, buildTtsBody, redactedRequest, estimateUsd, FISH_TTS_URL, cleanAudioOptions, audioOptionsLabel, VOLUME_STEPS, FORMATS, SAMPLE_RATES, normalizeInstruction, VOICE_TAG_GROUPS, VOICE_TAGS } from '/shared/payload.js';
 import { createMontage } from '/montage.js';
+import { TAG_GROUPS, ALL_TAGS } from '/tags.js';
 
 // ---------- Utilitaires DOM (textContent uniquement : aucun HTML injecté) ----------
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -74,6 +75,7 @@ const S = {
   apiOpen: store.get('cs.apiPanel', window.innerWidth >= 1500 ? '1' : '0') === '1',
   showCompare: false,
   customOpen: false,
+  moreTagsOpen: false,
   abPlaying: null,
   // Réglages audio Fish Audio (normalisation, volume) mémorisés entre les sessions
   audio: (() => { try { return cleanAudioOptions(JSON.parse(store.get('cs.audio', 'null'))) ?? cleanAudioOptions(); } catch { return cleanAudioOptions(); } })(),
@@ -102,8 +104,9 @@ const intentLabel = (instruction) => INTENTS.find((i) => i.tag === (instruction 
 // Nom d'une prise ou d'un segment : toutes les balises du texte final (ton de départ compris), en français,
 // sans les pauses ; « Neutre » seulement s'il n'y a aucune balise
 function toneLabel(finalText) {
-  const names = new Map(TAG_GROUPS.filter((g) => g.label !== 'Pauses').flatMap((g) => g.tags.map(([fr, tag]) => [tag, fr])));
-  const pauses = new Set(TAG_GROUPS.filter((g) => g.label === 'Pauses').flatMap((g) => g.tags.map(([, tag]) => tag)));
+  // Toutes les balises connues, y compris celles de la zone repliée « Plus de balises »
+  const names = new Map(ALL_TAGS.filter(([, , g]) => g !== 'Pauses').map(([fr, tag]) => [tag, fr]));
+  const pauses = new Set(ALL_TAGS.filter(([, , g]) => g === 'Pauses').map(([, tag]) => tag));
   const seen = [];
   for (const tag of String(finalText ?? '').match(/\[[^\]]+\]/g) ?? []) {
     if (pauses.has(tag)) continue;
@@ -282,15 +285,7 @@ window.addEventListener('hashchange', route);
 // =====================================================================
 // STUDIO
 // =====================================================================
-// Balises S2 documentées par Fish Audio (docs.fish.audio, Emotion Control, vérifié le 2026-10-23)
-const TAG_GROUPS = [
-  { label: 'Émotions', tags: [['Joyeux', '[happy]'], ['Triste', '[sad]'], ['En colère', '[angry]'], ['Enthousiaste', '[excited]'], ['Calme', '[calm]'], ['Nerveux', '[nervous]'], ['Confiant', '[confident]'], ['Surpris', '[surprised]'], ['Inquiet', '[worried]'], ['Curieux', '[curious]'], ['Sarcastique', '[sarcastic]'], ['Ému', '[moved]'], ['Fier', '[proud]'], ['Détendu', '[relaxed]'], ['Déterminé', '[determined]'], ['Nostalgique', '[nostalgic]'], ['Hésitant', '[uncertain]'], ['Déçu', '[disappointed]'], ['Méprisant', '[contemptuous]'], ['Dédaigneux', '[disdainful]'], ['Contrarié', '[upset]'], ['Agacé', '[frustrated]'], ['Dubitatif', '[doubtful]'], ['Perplexe', '[confused]'], ['Gêné', '[embarrassed]'], ['Indifférent', '[indifferent]']] },
-  { label: 'Ton', tags: [['Chuchoté', '[whispering]'], ['Voix douce', '[soft tone]'], ['Pressé', '[in a hurry tone]'], ['Crié', '[shouting]'], ['Insistance', '[emphasis]']] },
-  // Descriptions libres acceptées par S2 mais sans balise documentée : rendu non garanti
-  { label: 'Libres', free: true, tags: [['Interrogatif', '[questioning tone]'], ['Vexé', '[offended]'], ['Choqué', '[shocked]'], ['Moqueur', '[mocking]']] },
-  { label: 'Sons', tags: [['Rire', '[laughing]'], ['Petit rire', '[chuckling]'], ['Soupir', '[sighing]'], ['Souffle coupé', '[gasping]'], ['Raclement de gorge', '[clear throat]'], ['Bâillement', '[yawning]']] },
-  { label: 'Pauses', tags: [['Pause', '[break]'], ['Longue pause', '[long-break]']] }
-];
+// Balises S2 : liste unique dans public/tags.js (alignée sur docs/guide-balises.md)
 const INTENT_ICONS = { neutral: '○', calm: '☾', worried: '!', excited: '✦', whisper: '…' };
 const fmtHM = (iso) => (iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '');
 
@@ -825,15 +820,21 @@ function renderEditor() {
     onInput();
     saveDraft().then(() => renderTabs()).catch((e) => toast(e.message, 'error'));
   };
+  // Groupes de boutons de balises : `key` = 'tags' (visibles) ou 'more' (zone repliée)
+  const tagGroupsView = (key) => TAG_GROUPS.filter((g) => g[key].length).map((g) => h('div', { class: 'tag-group' },
+    h('small', {}, g.label),
+    h('div', { class: 'tag-list' }, g[key].map(([fr, tag]) => h('button', {
+      type: 'button', class: 'tag-btn', title: g.free ? `${tag} · description libre, rendu non garanti par Fish Audio` : tag,
+      // Empêche le champ texte de perdre le curseur au clic
+      onmousedown: (e) => e.preventDefault(), onclick: () => insertTag(tag)
+    }, fr, h('code', {}, tag))))));
   const palette = h('div', { class: 'compare-panel tag-palette' },
     h('p', { class: 'small muted' }, 'Placez le curseur dans le texte puis cliquez sur une balise : elle s’insère à cet endroit et agit sur ce qui suit. Les balises restent en anglais, c’est la langue documentée par Fish Audio. Groupe « Libres » : descriptions acceptées mais non documentées, à valider à l’écoute.'),
-    TAG_GROUPS.map((g) => h('div', { class: 'tag-group' },
-      h('small', {}, g.label),
-      h('div', { class: 'tag-list' }, g.tags.map(([fr, tag]) => h('button', {
-        type: 'button', class: 'tag-btn', title: g.free ? `${tag} · description libre, rendu non garanti par Fish Audio` : tag,
-        // Empêche le champ texte de perdre le curseur au clic
-        onmousedown: (e) => e.preventDefault(), onclick: () => insertTag(tag)
-      }, fr, h('code', {}, tag)))))));
+    tagGroupsView('tags'),
+    // Balises documentées moins courantes : repliées pour ne pas surcharger, état gardé entre deux affichages
+    h('details', { class: 'tag-more', open: S.moreTagsOpen, ontoggle: (e) => { S.moreTagsOpen = e.currentTarget.open; } },
+      h('summary', {}, `Plus de balises (${TAG_GROUPS.reduce((n, g) => n + g.more.length, 0)})`),
+      tagGroupsView('more')));
 
   const intents = h('div', { class: 'intents', role: 'group', 'aria-label': 'Intention' },
     INTENTS.map((it) => h('button', {
